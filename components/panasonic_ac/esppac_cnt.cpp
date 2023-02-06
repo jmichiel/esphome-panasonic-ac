@@ -309,7 +309,6 @@ bool PanasonicACCNT::verify_packet() {
 
 void PanasonicACCNT::handle_packet() {
   if (this->rx_buffer_[0] == POLL_HEADER) {
-    this->prev_data = this->data;
     this->data = std::vector<uint8_t>(this->rx_buffer_.begin() + 2, this->rx_buffer_.begin() + 12);
 
     if (this->set_data(true)) {
@@ -318,6 +317,7 @@ void PanasonicACCNT::handle_packet() {
     } else {
       ESP_LOGD(TAG, "Nothing changed, nothing to publish");
     }
+    this->prev_data = this->data;
 
     if (this->state_ != ACState::Ready)
       this->state_ = ACState::Ready;  // Mark as ready after first poll
