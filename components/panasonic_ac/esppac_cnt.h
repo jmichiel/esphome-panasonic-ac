@@ -35,9 +35,10 @@ class PanasonicACCNT : public PanasonicAC {
 
   // uint8_t data[10];
   std::vector<uint8_t> data = std::vector<uint8_t>(10);  // Stores the data received from the AC
+  std::vector<uint8_t> prev_data = std::vector<uint8_t>(10);  // For comparison to prevent spamming
   void handle_poll();
 
-  void set_data(bool set);
+  bool set_data(bool set);
 
   void send_command(std::vector<uint8_t> command, CommandType type, uint8_t header);
   void send_packet(const std::vector<uint8_t> &command, CommandType type);

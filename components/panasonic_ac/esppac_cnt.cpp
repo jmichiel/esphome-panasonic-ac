@@ -145,7 +145,7 @@ void PanasonicACCNT::control(const climate::ClimateCall &call) {
 /*
  * Set the data array to the fields
  */
-void PanasonicACCNT::set_data(bool set) {
+bool PanasonicACCNT::set_data(bool set) {
   this->mode = determine_mode(this->data[0]);
   this->custom_fan_mode = determine_fan_speed(this->data[3]);
 
@@ -206,6 +206,7 @@ void PanasonicACCNT::set_data(bool set) {
   this->update_eco(eco);
   this->update_econavi(econavi);
   this->update_mild_dry(mildDry);
+  return this->data != this->prev_data;
 }
 
 /*
@@ -296,10 +297,15 @@ bool PanasonicACCNT::verify_packet() {
 
 void PanasonicACCNT::handle_packet() {
   if (this->rx_buffer_[0] == POLL_HEADER) {
+    this->prev_data = this->data;
     this->data = std::vector<uint8_t>(this->rx_buffer_.begin() + 2, this->rx_buffer_.begin() + 12);
 
-    this->set_data(true);
-    this->publish_state();
+    if (this->set_data(true)) {
+      ESP_LOGD(TAG, "Changes detected, publishing Climate state");
+      this->publish_state();
+    } else {
+      ESP_LOGD(TAG, "Nothing changed, nothing to publish");
+    }
 
     if (this->state_ != ACState::Ready)
       this->state_ = ACState::Ready;  // Mark as ready after first poll
