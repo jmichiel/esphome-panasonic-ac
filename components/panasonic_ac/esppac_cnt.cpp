@@ -312,10 +312,10 @@ void PanasonicACCNT::handle_packet() {
     this->data = std::vector<uint8_t>(this->rx_buffer_.begin() + 2, this->rx_buffer_.begin() + 12);
 
     if (this->set_data(true)) {
-      ESP_LOGD(TAG, "Changes detected, publishing Climate state");
+      ESP_LOGV(TAG, "Changes detected, publishing Climate state");
       this->publish_state();
     } else {
-      ESP_LOGD(TAG, "Nothing changed, nothing to publish");
+      ESP_LOGV(TAG, "Nothing changed, nothing to publish");
     }
     this->prev_data = this->data;
 
