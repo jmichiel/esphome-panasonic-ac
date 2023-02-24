@@ -300,10 +300,10 @@ void PanasonicACCNT::handle_packet() {
   if (this->rx_buffer_[0] == POLL_HEADER) {
     this->data = std::vector<uint8_t>(this->rx_buffer_.begin() + 2, this->rx_buffer_.begin() + 12);
 
-    if (this->set_data(true) || this->publish_counter == 0) {
+    if (this->set_data(true) || (this->publish_counter == 0)) {
       ESP_LOGV(TAG, "Changes detected, publishing Climate state");
-      this->publish_state();
       this->publish_counter == 60;
+      this->publish_state();
     } else {
       ESP_LOGV(TAG, "Nothing changed, nothing to publish");
       --this->publish_counter;
