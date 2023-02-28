@@ -314,7 +314,7 @@ void PanasonicACCNT::handle_packet() {
 
     if (this->set_data(true) || (this->publish_counter == 0)) {
       ESP_LOGV(TAG, "Changes detected, publishing Climate state");
-      this->publish_counter == 60;
+      this->publish_counter = 60;
       this->publish_state();
     } else {
       ESP_LOGV(TAG, "Nothing changed, nothing to publish");
