@@ -330,7 +330,7 @@ void PanasonicACCNT::handle_packet() {
 
 
 void PanasonicACCNT::handle_resend() {
-  if (!this->waiting_for_response_ && !this->last_command_.empty())  // No response on last command yet...
+  if (!this->last_command_.empty())  // No response on last command yet...
   {
     ESP_LOGD(TAG, "Resending last command");
     send_command(this->last_command_, CommandType::Resend);
