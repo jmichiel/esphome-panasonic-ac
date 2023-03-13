@@ -8,7 +8,7 @@ namespace CNT {
 static const char *const TAG = "panasonic_ac.cz_tacg1";
 
 void PanasonicACCNT::setup() {
-  this->publish_counter = 0;
+  this->publish_counter_ = 0;
   PanasonicAC::setup();
 
   ESP_LOGD(TAG, "Using CZ-TACG1 protocol via CN-CNT");
@@ -31,6 +31,7 @@ void PanasonicACCNT::loop() {
     handle_packet();
 
     this->rx_buffer_.clear();  // Reset buffer
+    this->rx_pending_ = false;
   }
   handle_cmd();
   handle_poll();  // Handle sending poll packets
@@ -78,6 +79,7 @@ void PanasonicACCNT::control(const climate::ClimateCall &call) {
   }
 
   if (call.get_target_temperature().has_value()) {
+    ESP_LOGV(TAG, "Requested target_temperature change");
     this->cmd[1] = *call.get_target_temperature() / TEMPERATURE_STEP;
   }
 
@@ -230,6 +232,7 @@ void PanasonicACCNT::send_command(std::vector<uint8_t> command, CommandType type
   command.push_back(checksum);
 
   send_packet(command, type);  // Actually send the constructed packet
+  this->rx_pending_ = true;
 }
 
 /*
@@ -250,7 +253,7 @@ void PanasonicACCNT::send_packet(const std::vector<uint8_t> &packet, CommandType
  */
 
 void PanasonicACCNT::handle_poll() {
-  if (millis() - this->last_packet_sent_ > POLL_INTERVAL) {
+  if (millis() - this->last_packet_sent_ > POLL_INTERVAL && !this->rx_pending_) {
     ESP_LOGV(TAG, "Polling AC");
     send_command(CMD_POLL, CommandType::Normal, POLL_HEADER);
   }
@@ -312,13 +315,13 @@ void PanasonicACCNT::handle_packet() {
   if (this->rx_buffer_[0] == POLL_HEADER) {
     this->data = std::vector<uint8_t>(this->rx_buffer_.begin() + 2, this->rx_buffer_.begin() + 12);
 
-    if (this->set_data(true) || (this->publish_counter == 0)) {
+    if (this->set_data(true) || (this->publish_counter_ == 0)) {
       ESP_LOGV(TAG, "Changes detected, publishing Climate state");
-      this->publish_counter = 60;
+      this->publish_counter_ = 60;
       this->publish_state();
     } else {
       ESP_LOGV(TAG, "Nothing changed, nothing to publish");
-      --this->publish_counter;
+      --this->publish_counter_;
     }
     this->prev_data = this->data;
 
