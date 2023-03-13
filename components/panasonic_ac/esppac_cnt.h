@@ -38,8 +38,6 @@ class PanasonicACCNT : public PanasonicAC {
   std::vector<uint8_t> data = std::vector<uint8_t>(10);  // Stores the data received from the AC
   std::vector<uint8_t> cmd;  // Used to build next command
   std::vector<uint8_t> prev_data = std::vector<uint8_t>(10);  // For comparison to prevent spamming
-  std::vector<uint8_t> last_command_;
-  
   void handle_poll();
   void handle_cmd();
 
@@ -50,7 +48,6 @@ class PanasonicACCNT : public PanasonicAC {
 
   bool verify_packet();
   void handle_packet();
-  void handle_resend();
 
   climate::ClimateMode determine_mode(uint8_t mode);
   std::string determine_fan_speed(uint8_t speed);
@@ -65,6 +62,7 @@ class PanasonicACCNT : public PanasonicAC {
   bool determine_mild_dry(uint8_t value);
   uint16_t determine_power_consumption(uint8_t byte_28, uint8_t multiplier, uint8_t offset);
   uint16_t publish_counter_;
+  bool rx_pending_ = false;
 };
 
 }  // namespace CNT
