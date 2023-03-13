@@ -31,7 +31,6 @@ void PanasonicACCNT::loop() {
     handle_packet();
 
     this->rx_buffer_.clear();  // Reset buffer
-    this->rx_pending_ = false;
   }
   handle_cmd();
   handle_poll();  // Handle sending poll packets
@@ -220,6 +219,15 @@ bool PanasonicACCNT::set_data(bool set) {
  * Send a command, attaching header, packet length and checksum
  */
 void PanasonicACCNT::send_command(std::vector<uint8_t> command, CommandType type, uint8_t header = CNT::CTRL_HEADER) {
+  if (this->waiting_for_response_) {
+    ESP_LOGV("Can't send command, still waiting for a response...");
+    if (!this->last_command_.empty()) {
+      ESP_LOGW("We were already waiting to send another command!");
+    }
+    this->last_command_ = command;
+    return;
+  }
+
   uint8_t length = command.size();
   command.insert(command.begin(), header);
   command.insert(command.begin() + 1, length);
@@ -232,7 +240,6 @@ void PanasonicACCNT::send_command(std::vector<uint8_t> command, CommandType type
   command.push_back(checksum);
 
   send_packet(command, type);  // Actually send the constructed packet
-  this->rx_pending_ = true;
 }
 
 /*
@@ -253,7 +260,7 @@ void PanasonicACCNT::send_packet(const std::vector<uint8_t> &packet, CommandType
  */
 
 void PanasonicACCNT::handle_poll() {
-  if (millis() - this->last_packet_sent_ > POLL_INTERVAL && !this->rx_pending_) {
+  if (millis() - this->last_packet_sent_ > POLL_INTERVAL && !this->waiting_for_response_) {
     ESP_LOGV(TAG, "Polling AC");
     send_command(CMD_POLL, CommandType::Normal, POLL_HEADER);
   }
@@ -329,6 +336,16 @@ void PanasonicACCNT::handle_packet() {
       this->state_ = ACState::Ready;  // Mark as ready after first poll
   } else {
     ESP_LOGD(TAG, "Received unknown packet");
+  }
+}
+
+
+void PanasonicACCNT::handle_resend() {
+  if (!this->last_command_.empty())  // No response on last command yet...
+  {
+    ESP_LOGD(TAG, "Resending last command");
+    send_command(this->last_command_, CommandType::Resend);
+    this->last_command_.clear();
   }
 }
 
