@@ -220,9 +220,9 @@ bool PanasonicACCNT::set_data(bool set) {
  */
 void PanasonicACCNT::send_command(std::vector<uint8_t> command, CommandType type, uint8_t header = CNT::CTRL_HEADER) {
   if (this->waiting_for_response_) {
-    ESP_LOGV(TAG, "Can't send command, still waiting for a response...");
+    ESP_LOGV("Can't send command, still waiting for a response...");
     if (!this->last_command_.empty()) {
-      ESP_LOGW(TAG, "We were already waiting to send another command!");
+      ESP_LOGW("We were already waiting to send another command!");
     }
     this->last_command_ = command;
     return;
